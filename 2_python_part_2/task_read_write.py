@@ -13,8 +13,12 @@ Example:
 files_tab = []
 
 for i in range(3):
-    with open(f'files/file_{i+1}.txt') as f:
-        files_tab.append(f.read())
+    try:
+        with open(f'files/file_{i+1}.txt') as f:
+            files_tab.append(f.read())
+
+    except FileNotFoundError:
+        print('message')
 
 with open('files/result.txt', 'w') as f:
     f.write(str(', '.join(files_tab)))

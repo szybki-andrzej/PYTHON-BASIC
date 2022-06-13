@@ -24,11 +24,19 @@ def generate_words(n=20):
 
 generated_words = generate_words()
 
-with open('files/file1.txt', mode='w', encoding='UTF-8') as f:
-    f.write('\n'.join(generated_words))
+try:
+    with open('files/file1.txt', mode='w', encoding='UTF-8') as f:
+        f.write('\n'.join(generated_words))
 
-with open('files/file2.txt', mode='w', encoding='CP1252') as f:
-    f.write(','.join(reversed(generated_words)))
+except FileNotFoundError:
+    print('message')
+
+try:
+    with open('files/file2.txt', mode='w', encoding='CP1252') as f:
+        f.write(','.join(reversed(generated_words)))
+
+except FileNotFoundError:
+    print('message')
 
 
 

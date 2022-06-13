@@ -47,6 +47,7 @@ class Student:
     def do_homework(homework):
         if homework.deadline < datetime.datetime.now():
             print("Oops, you're late!")
+            return None
         return homework
 
 

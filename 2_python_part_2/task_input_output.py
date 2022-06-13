@@ -24,7 +24,7 @@ def read_numbers(n: int) -> str:
         try:
             numbers_tab.append(float(input("Enter the number")))
         except ValueError:
-            pass  # I'm using pass statement because as it is sad above I
+            continue  # I'm using continue statement because as it is sad above I
             # don't need to do anything when ValueError occurs
 
     if len(numbers_tab) > 0:
