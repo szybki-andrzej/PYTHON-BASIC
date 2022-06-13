@@ -12,6 +12,7 @@ Examples:
 """
 from typing import Tuple
 
+
 # I had to delete Hint section above, because it didn't work with it.
 
 
@@ -19,9 +20,15 @@ def get_min_max(filename: str) -> Tuple[int, int]:
     """Function which receives filename and reads the file line by line
      and returns min and max integer from the file."""
 
+    minim = None
+    maxim = None
+
     with open(filename) as opened_file:
-        file_tab = [int(line) for line in opened_file]
+        for line in opened_file:
 
-    result = (min(file_tab), max(file_tab))
+            if minim == None or minim > int(line):
+                minim = int(line)
+            if maxim == None or maxim < int(line):
+                maxim = int(line)
 
-    return result
+    return (minim, maxim)

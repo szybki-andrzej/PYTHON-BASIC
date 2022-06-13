@@ -13,6 +13,7 @@ Examples:
     ''
 """
 from typing import Iterable
+from collections import OrderedDict
 
 
 def build_from_unique_words(*lines: Iterable[str], word_number: int) -> str:
@@ -24,7 +25,7 @@ def build_from_unique_words(*lines: Iterable[str], word_number: int) -> str:
         raise ValueError('word_number has to be more or equal to 0!')
 
     words_tab = \
-        [sorted(set(line.split(' '))) for line in lines if len(line) != 0]
+        [list(OrderedDict.fromkeys(line.split(' '))) for line in lines if len(line) != 0]
     word_number_tab = \
         [item[word_number] for item in words_tab if len(item) > word_number]
 

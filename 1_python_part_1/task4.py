@@ -14,9 +14,11 @@ def calculate_power_with_difference(ints: List[int]) -> List[int]:
      integer and subtracting difference between original previous value,
      and it's power. For first value subtracts nothing."""
 
-    result_tab = [ints[0] ** 2]
+    power_dict = {ints[0]: ints[0] ** 2}
+    result_tab = [power_dict[ints[0]]]
 
     for i in range(1, len(ints)):
-        result_tab.append(ints[i]**2 - ints[i-1]**2 + ints[i-1])
+        power_dict[i+1] = (i+1)**2
+        result_tab.append(power_dict[i+1] - power_dict[i] + ints[i-1])
 
     return result_tab
