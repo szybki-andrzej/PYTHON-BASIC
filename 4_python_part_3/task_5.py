@@ -5,6 +5,7 @@ Examples:
 #     >>> make_request('https://www.google.com')
      200, 'response data'
 """
+import re
 from typing import Tuple
 import requests
 from unittest.mock import Mock
@@ -12,9 +13,12 @@ from unittest.mock import Mock
 
 def make_request(url: str) -> Tuple[int, str]:
     response = requests.get(url)
+    respond_text = response.text
+    respond_text_title = re.search('<\W*title\W*(.*)</title', respond_text, re.IGNORECASE)
+    respond_text_title = respond_text_title.group(1)
     status_code = response.status_code
     response.encoding = 'utf-8'
-    return status_code, response.text
+    return status_code, respond_text_title
 
 
 """
@@ -34,7 +38,10 @@ Example:
 def test_make_request():
     test_request = Mock()
     test_request.status_code.return_value = 200
+    test_request.response_data.return_value = 'Google'
+    request = make_request('https://www.google.com')
 
-    assert test_request.status_code() == make_request('https://www.google.com')[0]
+    assert test_request.status_code() == request[0]
+    assert test_request.response_data() == request[1]
 
 

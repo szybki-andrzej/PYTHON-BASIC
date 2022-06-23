@@ -14,9 +14,7 @@ import pytest
 
 
 def is_http_domain(domain: str) -> bool:
-    if re.match(r"^http:/", domain):
-        return True
-    elif re.match(r"^https:/", domain):
+    if re.match(r'^(http(s)?:\/\/)[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&‘\(\)\*\+,;=.]+$', domain):
         return True
     else:
         return False

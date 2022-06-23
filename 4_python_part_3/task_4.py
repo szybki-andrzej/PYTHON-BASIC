@@ -61,6 +61,7 @@ Example:
 def test_print_name_address(mock_args):
 
     split_result = list(print_name_address(mock_args).split('\n'))
+    split_result.pop()
 
     for result in split_result:
         result_dict_keys = [*eval(result)]
