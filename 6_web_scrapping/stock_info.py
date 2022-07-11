@@ -30,6 +30,7 @@ Links:
 
 from bs4 import BeautifulSoup
 import requests
+from operator import itemgetter
 
 most_active_url = 'https://finance.yahoo.com/most-active'
 most_active_page = requests.get(most_active_url)
@@ -43,173 +44,170 @@ main_tab = soup.find_all('a', class_='Fw(600) C($linkColor)')
 headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:82.0) Gecko/20100101 Firefox/82.0'}
 
 
-def ceo_year_born_all():
+def ceo_year_born_data():
+    """Function that scraps and return a list of companies from most-active page
+    with data necessary to make the youngest-ceos sheet"""
+
     ceo_year_born_tab = []
 
-    for a in main_tab:  # to make scrapping faster now I use only 6 records
+    for a in main_tab:
         # general
         first, second = a['href'].split('?')
         company_code = f'{first[7:]}'
-        company_profile_url = base_url + first + '/profile?' + second
-        company_profile_page = requests.get(company_profile_url, headers=headers)
-        company_soup = BeautifulSoup(company_profile_page.content, 'html.parser')
-
-        # year born
-        row = company_soup.find('tbody').find_all('tr')[0]
-        ceo_line = row.find_all('td')
-        year_born = str(ceo_line[4].text)
-
-        # ceo name
-        ceo_name = str(ceo_line[0].text)
-
-        # company name
-        name = str(company_soup.find('h3', class_='Fz(m) Mb(10px)').text)
-
-        # country
-        country_line = str(company_soup.find('p', class_='D(ib) W(47.727%) Pend(40px)'))
-        country_substring = '<br/>'
-        country_start_index = country_line.find(country_substring, country_line.find(country_substring) + 1) \
-                              + len(country_substring)
-        country_end_index = country_line.find(country_substring, country_start_index)
-        country = country_line[country_start_index:country_end_index]
-
-        # employees
-        employees = str(company_soup.find('p', class_="D(ib) Va(t)").find_all('span')[-1].text)
-
-        ceo_year_born_tab.append([name, company_code, country, employees, ceo_name, year_born])
         print(company_code)
+
+        if company_code != 'ENIA':  # line used when any of pages currently doesn't work, I print company code to verify which one, use 'N/A' if everything works fine
+            company_profile_url = base_url + first + '/profile?' + second
+            company_profile_page = requests.get(company_profile_url, headers=headers)
+            company_soup = BeautifulSoup(company_profile_page.content, 'html.parser')
+
+            # year born
+            row = company_soup.find('tbody').find_all('tr')[0]
+            ceo_line = row.find_all('td')
+            year_born = str(ceo_line[4].text)
+
+            # ceo name
+            ceo_name = str(ceo_line[0].text)
+
+            # company name
+            name = str(company_soup.find('h3', class_='Fz(m) Mb(10px)').text)
+
+            # country
+            country_line = str(company_soup.find('p', class_='D(ib) W(47.727%) Pend(40px)'))
+            country_substring = '<br/>'
+            country_start_index = country_line.find(country_substring, country_line.find(country_substring) + 1) \
+                                  + len(country_substring)
+            country_end_index = country_line.find(country_substring, country_start_index)
+            country = country_line[country_start_index:country_end_index]
+
+            # employees
+            employees = str(company_soup.find('p', class_="D(ib) Va(t)").find_all('span')[-1].text)
+
+            ceo_year_born_tab.append([name, company_code, country, employees, ceo_name, year_born])
 
     return ceo_year_born_tab
 
 
-def ceo_year_born(ceo_year_born_tab):
-    list_of_year_born = [year_born[5] for year_born in ceo_year_born_tab]
-    list_of_year_born.sort(reverse=True)
+def first_five_ceo_year_born():
+    """Function that from all companies from most-active returns first 5 with the youngest CEOs"""
 
-    for i in list_of_year_born:
-        if i == 'N/A':
-            list_of_year_born.remove(i)
-        else:
+    ceo_year_born_tab = ceo_year_born_data()
+    youngest_ceos = sorted(ceo_year_born_tab, key=itemgetter(5), reverse=True)
+    # deleting items with 'N/A'
+    for i in youngest_ceos:
+        if i[5] == 'N/A':
+            youngest_ceos.remove(i)
+        else:   # it's sorted, so they appear only on first positions, I use break
             break
 
-    youngest_ceos = list_of_year_born[:5]
-    youngest_ceos_tab = []
-    for year in youngest_ceos:
-        for data in ceo_year_born_tab:
-            if year == data[5]:
-                youngest_ceos_tab.append(data)
-
-    # what when is 2 places ex aequo at the end?
-    return youngest_ceos_tab[:5]
+    return youngest_ceos[:5]
 
 
-def week_change_all():
+def week_change_data():
+    """Function that scraps and return a list of companies from most-active page
+    with data necessary to make the week-change sheet"""
+
     week_change_tab = []
 
     for a in main_tab:
         # general
         first, second = a['href'].split('?')
         company_code = f'{first[7:]}'
-        company_statistics_url = base_url + first + '/key-statistics?' + second
-        company_statistics_page = requests.get(company_statistics_url, headers=headers)
-        company_soup = BeautifulSoup(company_statistics_page.content, 'html.parser')
-
-        # 52 week change
-        stock_price_history = company_soup.find('div', class_='Fl(end) W(50%) smartphone_W(100%)')
-        change_string = stock_price_history.find_all('tr')[1].find('td',
-                                                                   class_='Fw(500) Ta(end) Pstart(10px) Miw(60px)').text
-        change = float(change_string[:-1])
-
-        # total cash
-        financial_highlights = company_soup.find('div', class_='Mb(10px) Pend(20px) smartphone_Pend(0px)')
-        balance_sheet = financial_highlights.find_all('div', class_='Pos(r) Mt(10px)')[4]
-        total_cash = balance_sheet.find('td', class_='Fw(500) Ta(end) Pstart(10px) Miw(60px)').text
-
-        # company name
-        name = company_soup.find('h1', class_='D(ib) Fz(18px)').text[:-(len(company_code) + 3)]
-
-        week_change_tab.append([name, company_code, change, total_cash])
         print(company_code)
+
+        if company_code != 'ENIA':
+            company_statistics_url = base_url + first + '/key-statistics?' + second
+            company_statistics_page = requests.get(company_statistics_url, headers=headers)
+            company_soup = BeautifulSoup(company_statistics_page.content, 'html.parser')
+
+            # 52 week change
+            stock_price_history = company_soup.find('div', class_='Fl(end) W(50%) smartphone_W(100%)')
+            change_string = stock_price_history.find_all('tr')[1].find('td',
+                                                                       class_='Fw(500) Ta(end) Pstart(10px) Miw(60px)').text
+            if change_string != 'N/A':
+                change = float(change_string[:-1])
+
+                # total cash
+                financial_highlights = company_soup.find('div', class_='Mb(10px) Pend(20px) smartphone_Pend(0px)')
+                balance_sheet = financial_highlights.find_all('div', class_='Pos(r) Mt(10px)')[4]
+                total_cash = balance_sheet.find('td', class_='Fw(500) Ta(end) Pstart(10px) Miw(60px)').text
+
+                # company name
+                name = company_soup.find('h1', class_='D(ib) Fz(18px)').text[:-(len(company_code) + 3)]
+
+                week_change_tab.append([name, company_code, change, total_cash])
 
     return week_change_tab
 
 
-def week_change(week_change_tab):
-    list_of_week_change = [change[2] for change in week_change_tab]
-    list_of_week_change.sort(reverse=True)
+def first_ten_week_change():
+    """Function that from all companies from most-active returns first 10 with the best week-change"""
 
-    best_change = list_of_week_change[:10]
-    best_change_tab = []
-    for change in best_change:
-        for data in week_change_tab:
-            if change == data[2]:
-                best_change_tab.append(data)
-
-    # what when is 2 places ex aequo at the end?
-    return best_change_tab[:10]
+    week_change_tab = week_change_data()
+    result = sorted(week_change_tab, key=itemgetter(2), reverse=True)
+    return result[:10]
 
 
-def holds_all():
+def holds_data():
+    """Function that scraps and return a list of companies from most-active page
+        with data necessary to make the holds sheet"""
     holds_tab = []
 
     for a in main_tab:
         # general
         first, second = a['href'].split('?')
         company_code = f'{first[7:]}'
-        company_statistics_url = base_url + first + '/holders?' + second
-        company_statistics_page = requests.get(company_statistics_url, headers=headers)
-        company_soup = BeautifulSoup(company_statistics_page.content, 'html.parser')
-
-        holders_all = company_soup.find_all('tr',
-                                            class_='BdT Bdc($seperatorColor) Bgc($hoverBgColor):h Whs(nw) H(36px)')
-        for holder in holders_all:
-            if holder.find_all('td')[0].text == 'Blackrock Inc.':
-                holders = holder.find_all('td')
-
-                # company name
-                name = company_soup.find('h1', class_='D(ib) Fz(18px)').text[:-(len(company_code) + 3)]
-
-                # shares
-                shares = holders[1].text
-
-                # date reported
-                date_reported = holders[2].text
-
-                # %out
-                out = holders[3].text
-
-                # value
-                value = int(holders[4].text.replace(',', ''))
-
-                holds_tab.append([name, company_code, shares, date_reported, out, value])
-
         print(company_code)
+
+        if company_code != 'ENIA':
+            company_statistics_url = base_url + first + '/holders?' + second
+            company_statistics_page = requests.get(company_statistics_url, headers=headers)
+            company_soup = BeautifulSoup(company_statistics_page.content, 'html.parser')
+
+            holders_all = company_soup.find_all('tr',
+                                                class_='BdT Bdc($seperatorColor) Bgc($hoverBgColor):h Whs(nw) H(36px)')
+            for holder in holders_all:
+                if holder.find_all('td')[0].text == 'Blackrock Inc.':
+                    holders = holder.find_all('td')
+
+                    # company name
+                    name = company_soup.find('h1', class_='D(ib) Fz(18px)').text[:-(len(company_code) + 3)]
+
+                    # shares
+                    shares = holders[1].text
+
+                    # date reported
+                    date_reported = holders[2].text
+
+                    # %out
+                    out = holders[3].text
+
+                    # value
+                    value = int(holders[4].text.replace(',', ''))
+
+                    holds_tab.append([name, company_code, shares, date_reported, out, value])
 
     if len(holds_tab) != 0:
         return holds_tab
 
 
-def holds(holds_tab):
-    list_of_holds = [hold[5] for hold in holds_tab]
-    list_of_holds.sort(reverse=True)
+def first_ten_holds():
+    """Function that from all companies from most-active returns the biggest Blackrock inc. holds"""
 
-    best_hold = list_of_holds[:10]
-    best_hold_tab = []
-    for hold in best_hold:
-        for data in holds_tab:
-            if hold == data[5]:
-                best_hold_tab.append(data)
-
-    # what when is 2 places ex aequo at the end?
-    return best_hold_tab[:10]
+    holds_tab = holds_data()
+    result = sorted(holds_tab, key=itemgetter(5), reverse=True)
+    return result[:10]
 
 
-def ceo_year_born_sheet(ceo_year_born_data):
+def ceo_year_born_sheet_print():
+    """Function that prints the sheet for the data given by first_five_ceo_year_born"""
+
+    first_five_ceo_year_born_data = first_five_ceo_year_born()
     print('=' * 61, '5 stocks with the youngest CEOs', '=' * 61)
     print('| Name                                      | Code    | Country'
           '                        | Employees    | CEO Name                          | CEO Year Born |')
     print('-' * 155)
-    for verse in ceo_year_born_data:
+    for verse in first_five_ceo_year_born_data:
         print('|', verse[0], ' ' * (39 - len(verse[0])),
               ' |', verse[1], ' ' * (5 - len(verse[1])),
               ' |', verse[2], ' ' * (28 - len(verse[2])),
@@ -218,23 +216,29 @@ def ceo_year_born_sheet(ceo_year_born_data):
               ' |', verse[5], ' ' * (12 - len(str(verse[5]))), '|')
 
 
-def week_change_sheet(week_change_data):
+def week_change_sheet_print():
+    """Function that prints the sheet for the data given by first_ten_week_change"""
+
+    first_ten_week_change_data = first_ten_week_change()
     print('=' * 23, '10 stocks with best 52-Week Change', '=' * 23)
     print('| Name                                   | Code    | 52-week change | Total Cash |')
     print('-' * 82)
-    for verse in week_change_data:
+    for verse in first_ten_week_change_data:
         print('|', verse[0], ' ' * (36 - len(verse[0])),
               ' |', verse[1], ' ' * (5 - len(verse[1])),
               ' |', verse[2], '%', ' ' * (10 - len(str(verse[2]))),
               ' |', verse[3], ' ' * (9 - len(verse[3])), '|')
 
 
-def holds_sheet(holds_data):
+def holds_sheet_print():
+    """Function that prints the sheet for the data given by first_ten_holds"""
+
+    first_ten_holds_data = first_ten_holds()
     print('=' * 37, '10 largest holds of Blackrock Inc.', '=' * 37)
     print('| Name                            | Code    | Shares            | Data Reported  | % Out '
           '   | Value          |')
     print('-' * 110)
-    for verse in holds_data:
+    for verse in first_ten_holds_data:
         print('|', verse[0], ' ' * (29 - len(verse[0])),
               ' |', verse[1], ' ' * (5 - len(verse[1])),
               ' |', verse[2], ' ' * (15 - len(verse[2])),
@@ -244,8 +248,9 @@ def holds_sheet(holds_data):
 
 
 if __name__ == "__main__":
-    ceo_year_born_sheet(ceo_year_born(ceo_year_born_all()))
 
-    week_change_sheet(week_change(week_change_all()))
+    ceo_year_born_sheet_print()
 
-    holds_sheet(holds(holds_all()))
+    week_change_sheet_print()
+
+    holds_sheet_print()
