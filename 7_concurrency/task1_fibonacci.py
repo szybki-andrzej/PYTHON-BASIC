@@ -23,28 +23,37 @@ def fib(n: int):
     return f1
 
 
-def func1_normal(ordinal_numbers):  # first 2 functions are implemented normally to compare the speed
+def func1_one_thread(ordinal_numbers):  # first function is implemented normally to compare the speed
+    """Function that writes the files with fibonacci results using one-thread methods"""
+
     for i in ordinal_numbers:
         with open(output_dir + f'/file {str(i)}.txt', 'w') as f:
             f.write(str(fib(i - 1)))
 
 
-def func2_normal(folder):
+def func2(folder):
+    """Function that reads the files and save results to csv file"""
+
     files = glob.glob(f'{folder}/*.txt')
     with open(result_file, 'w') as f:
         writer = csv.writer(f)
         for file in files:
             with open(file) as input:
                 content = input.read()
+                # I'm using file [14:-4] to get only the name of the file without path and extension
                 writer.writerow((file[14:-4], content))
 
 
-def func1(array):
+def func1_concurrent(array):
+    """Function that uses concurrent programming to write and save files with fibonacci results"""
+
     with concurrent.futures.ProcessPoolExecutor(max_workers=10, mp_context=mp.get_context('fork')) as ex:
         ex.map(calc_and_write, array)
 
 
 def calc_and_write(number):
+    """Function to write the files useful for concurrent implementation"""
+
     with open(output_dir + f'/file {str(number)}.txt', 'w') as f:
         f.write(str(fib(number - 1)))
 
@@ -55,14 +64,14 @@ if __name__ == "__main__":
 
     array = [randint(1000, 100000) for _ in range(100)]
 
-    # normal implementation
-    start_normal = time.time()
-    func1_normal(array)
-    func2_normal(output_dir)
-    print(time.time() - start_normal)
+    # one-thread implementation
+    start_one_thread = time.time()
+    func1_one_thread(array)
+    func2(output_dir)
+    print(f'Normal implementation time: {time.time() - start_one_thread}')
 
     # implementation with concurrency
     start = time.time()
-    func1(array)
-    func2_normal(output_dir)
-    print(time.time() - start)
+    func1_concurrent(array)
+    func2(output_dir)
+    print(f'Concurrent implementation time: {time.time() - start}')
